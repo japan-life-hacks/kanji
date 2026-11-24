@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>かん字れんしゅう帳</title>
+<style>
+:root{--bg:#f2f7f4;--paper:#fff;--ink:#1c2b2a;--sub:#5d716e;--line:#c9dad5;--guide:#8fb8ac;--accent:#1f7a63;--accent-ink:#fff;--red:#d8443a;--warn:#c27a12;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141d1b;--paper:#1c2826;--ink:#e8f1ee;--sub:#9db3ae;--line:#334641;--guide:#4f7a6f;--accent:#4fc0a0;--accent-ink:#0d1a17;--red:#ff7a6e;--warn:#e8a63c}}
+:root[data-theme="dark"]{--bg:#141d1b;--paper:#1c2826;--ink:#e8f1ee;--sub:#9db3ae;--line:#334641;--guide:#4f7a6f;--accent:#4fc0a0;--accent-ink:#0d1a17;--red:#ff7a6e;--warn:#e8a63c}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;line-height:1.6}
+.k{font-family:"UD Digi Kyokasho N-R","UD デジタル 教科書体 N-R","Hiragino Mincho ProN","Yu Mincho",serif}
+main{max-width:760px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:20px;margin:6px 0 10px}
+nav{display:flex;gap:6px;margin-bottom:14px}
+nav button{flex:1;padding:12px 4px;font-size:16px;border:2px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;font-weight:600}
+nav button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+section{display:none}section.on{display:block}
+button{font:inherit;cursor:pointer}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{padding:12px 18px;border-radius:10px;border:2px solid var(--line);background:var(--paper);color:var(--ink);font-size:16px;font-weight:600}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.big{flex:1;padding:16px;font-size:20px}
+.btn.ok{border-color:var(--accent);color:var(--accent)}
+.btn.ng{border-color:var(--warn);color:var(--warn)}
+.btn:disabled{opacity:.35}
+.hint{font-size:28px;font-weight:700;margin:4px 0 2px}
+.meta{color:var(--sub);font-size:14px}
+.board{position:relative;margin:10px auto;background:var(--paper);border:2px solid var(--guide);border-radius:6px;width:100%}
+.board canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.ov{position:absolute;inset:0;display:none;pointer-events:none;color:var(--red);opacity:.4;text-align:center}
+.ov.on{display:grid}
+.pr{position:absolute;inset:0;display:grid;pointer-events:none;color:var(--sub);text-align:center}
+.pr span{display:flex;align-items:center;justify-content:center;line-height:1}
+.ov span{display:flex;align-items:center;justify-content:center;line-height:1}
+.card{background:var(--paper);border:2px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0}
+input,textarea{font:inherit;font-size:18px;padding:10px;border:2px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);width:100%}
+.list li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.list{list-style:none;margin:0;padding:0}
+.list .w{font-size:28px;min-width:90px}
+.list .m{flex:1;color:var(--sub);font-size:14px}
+.x{border:none;background:none;color:var(--sub);font-size:22px;padding:6px 10px}
+.msg{text-align:center;padding:30px 10px;font-size:20px}
+.stats{display:flex;gap:10px}.stats div{flex:1;text-align:center}.stats b{display:block;font-size:30px}
+textarea{width:100%;resize:vertical}
+input[type=checkbox]{width:26px;height:26px;flex:none}
+.pvrow{display:flex;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.pvrow input[type=text]{min-width:0}
+</style>
+</head>
+<body>
+<main>
+<h1>かん字れんしゅう帳</h1>
+<nav>
+<button data-t="p" class="on">れんしゅう</button>
+<button data-t="r">とうろく</button>
+<button data-t="k">きろく</button>
+</nav>
+
+<section id="p" class="on">
+<div class="row" style="margin-bottom:6px">
+<button class="btn pri" id="m-all">ぜんぶ</button>
+<button class="btn" id="m-rev">ふくしゅう</button>
+<span class="meta" id="prog"></span>
+</div>
+<div id="stage">
+<div class="meta">よみ・ヒント</div>
+<div class="hint" id="hint"></div>
+<div class="board" id="board"><div class="pr k" id="pr"></div><canvas id="cv"></canvas><div class="ov k" id="ov"></div></div>
+<div class="row" style="margin-bottom:10px">
+<button class="btn" id="clr">けす</button>
+<button class="btn" id="show">おてほんを見る</button>
+</div>
+<div class="row">
+<button class="btn big ok" id="good" disabled>できた</button>
+<button class="btn big ng" id="near" disabled>おしい</button>
+</div>
+<div class="meta" style="margin-top:6px">書いたら「おてほん」を見て、自分で見くらべよう。</div>
+</div>
+<div class="msg" id="end" style="display:none"></div>
+</section>
+
+<section id="r">
+<div class="card">
+<div class="meta">学校のプリントやテストの漢字を登録します（おうちの人用）</div>
+<div class="row" style="margin-top:8px;flex-wrap:nowrap">
+<input id="iw" placeholder="漢字（例：季節、使える）" class="k" maxlength="6">
+<input id="ih" placeholder="よみ（例：きせつ）">
+</div>
+<div class="row" style="margin-top:8px"><button class="btn pri" id="add">ついか</button></div>
+</div>
+<div class="card" id="bulk"><b>まとめて登録</b>
+<div class="meta" style="margin:6px 0">1行に1語。「漢字,よみ」の形で書きます（よみは省略できます）。送りがなのある語は「使える,つかえる」のようにそのまま書くと、漢字の部分（使）だけ書き取ります。CSVはUTF-8で保存してください。</div>
+<textarea id="bt" rows="4" class="k" placeholder="季節,きせつ&#10;完成,かんせい"></textarea>
+<div class="row" style="margin-top:8px">
+<button class="btn" id="bpv">内容を確認</button>
+<label class="btn" for="bf">CSV・テキストを選ぶ</label><input type="file" id="bf" accept=".csv,.txt,text/csv,text/plain" hidden>
+</div>
+<div id="imgbox" style="display:none;margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+<div class="meta">プリントやテストの写真から、漢字とよみを読み取ります。</div>
+<div class="row" style="margin-top:8px"><label class="btn pri" for="bi">写真を選ぶ・撮る</label><input type="file" id="bi" accept="image/*" multiple hidden></div>
+</div>
+<div class="meta" id="bmsg" style="margin-top:8px"></div>
+</div>
+<div class="card" id="pv" style="display:none"><b>登録前の確認</b>
+<div class="meta">まちがいは直せます。チェックを外した漢字は登録しません。</div>
+<div id="pvl"></div>
+<div class="row" style="margin-top:10px"><button class="btn pri" id="pvok">登録する</button><button class="btn" id="pvno">やめる</button></div>
+</div>
+<ul class="list card" id="reglist"></ul>
+</section>
+
+<section id="k">
+<div class="card stats" id="stats"></div>
+<div class="card"><b>ふくしゅうリスト</b>
+<ul class="list" id="revlist"></ul></div>
+</section>
+</main>
+
+<script>
+(function(){
+var KEY='kanji-renshu-v1';
+var S={items:[
+{id:1,w:'愛',h:'あい',ok:0,miss:0,rev:false},
+{id:2,w:'季節',h:'きせつ',ok:0,miss:0,rev:false},
+{id:3,w:'完成',h:'かんせい',ok:0,miss:0,rev:false}
+],nid:4};
+try{var j=localStorage.getItem(KEY);if(j)S=JSON.parse(j)}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var $=function(s){return document.querySelector(s)};
+var dpr=Math.min(window.devicePixelRatio||1,3);
+var dirty=false,q=[],cur=null,mode='all',ses={ok:0,n:0},shown=false,pen=false,drawing=false,last=null;
+var cv=$('#cv'),ctx=cv.getContext('2d'),board=$('#board'),ov=$('#ov'),pr=$('#pr');
+
+document.querySelectorAll('nav button').forEach(function(b){b.onclick=function(){
+document.querySelectorAll('nav button').forEach(function(x){x.classList.toggle('on',x===b)});
+document.querySelectorAll('section').forEach(function(s){s.classList.toggle('on',s.id===b.dataset.t)});
+if(b.dataset.t==='k')renderStats();if(b.dataset.t==='r')renderReg();if(b.dataset.t==='p'){if(dirty){dirty=false;start('all')}else layout();}
+}});
+
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function start(m){mode=m;ses={ok:0,n:0};
+$('#m-all').classList.toggle('pri',m==='all');$('#m-rev').classList.toggle('pri',m==='rev');
+var pool=S.items.filter(function(i){return m==='all'||i.rev});
+q=shuffle(pool.slice());next();}
+function next(){shown=false;cur=q.shift()||null;render();}
+function render(){
+var has=!!cur;$('#stage').style.display=has?'block':'none';$('#end').style.display=has?'none':'block';
+$('#prog').textContent=ses.n?('できた '+ses.ok+' / '+ses.n):'';
+if(!has){
+var e=$('#end');
+if(!S.items.length)e.textContent='まず「とうろく」で漢字を入れよう。';
+else if(mode==='rev'&&!ses.n)e.textContent='ふくしゅうする漢字はありません。';
+else e.textContent='おわり！ '+ses.ok+' / '+ses.n+' できました。';
+return;}
+$('#hint').textContent=cur.h||'';
+$('#show').textContent='おてほんを見る';
+$('#good').disabled=$('#near').disabled=true;
+ov.classList.remove('on');
+layout();
+}
+function kanaCell(i){var w=cur.w,re=/[\u4E00-\u9FFF\u3005\u3007]/;if(!re.test(w))return false;return !re.test(w[i]||'')}
+function kanaAt(p){return kanaCell(Math.floor(p.x/(cv.width/cur.w.length)))}
+function layout(){
+if(!cur)return;
+var n=cur.w.length;
+board.style.maxWidth=(n*300)+'px';
+board.style.aspectRatio=n+' / 1';
+var r=board.getBoundingClientRect();
+if(!r.width)return;
+cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+ov.style.gridTemplateColumns='repeat('+n+',1fr)';
+pr.style.gridTemplateColumns=ov.style.gridTemplateColumns;
+ov.style.fontSize=(r.width/n*0.8)+'px';
+pr.style.fontSize=ov.style.fontSize;
+ov.innerHTML='';pr.innerHTML='';
+for(var i=0;i<n;i++){var s=document.createElement('span'),t=document.createElement('span');
+s.textContent=cur.w[i];
+if(kanaCell(i)){t.textContent=cur.w[i];s.style.visibility='hidden'}
+ov.appendChild(s);pr.appendChild(t)}
+clearCanvas();
+}
+function guides(){
+var n=cur.w.length,W=cv.width,H=cv.height,c=W/n;
+var col=getComputedStyle(document.documentElement).getPropertyValue('--guide').trim()||'#8fb8ac';
+ctx.save();ctx.strokeStyle=col;ctx.lineWidth=dpr;ctx.setLineDash([6*dpr,6*dpr]);ctx.globalAlpha=.7;
+for(var i=0;i<n;i++){var x=i*c;
+if(!kanaCell(i)){ctx.beginPath();ctx.moveTo(x+c/2,0);ctx.lineTo(x+c/2,H);ctx.moveTo(x,H/2);ctx.lineTo(x+c,H/2);ctx.stroke()}
+if(i){ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();ctx.setLineDash([6*dpr,6*dpr])}}
+ctx.restore();
+}
+function clearCanvas(){ctx.clearRect(0,0,cv.width,cv.height);if(cur)guides()}
+function pt(e){var r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*dpr,y:(e.clientY-r.top)*dpr,p:e.pressure}}
+function wd(p,e){return dpr*(e.pointerType==='pen'?(3+(p||.5)*7):7)}
+function ink(){return getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()||'#1c2b2a'}
+cv.addEventListener('pointerdown',function(e){
+if(e.pointerType==='pen')pen=true;
+if(e.pointerType==='touch'&&pen)return;
+e.preventDefault();cv.setPointerCapture(e.pointerId);last=pt(e);if(kanaAt(last)){return}drawing=true;
+ctx.fillStyle=ink();ctx.beginPath();ctx.arc(last.x,last.y,wd(last.p,e)/2,0,7);ctx.fill();
+});
+cv.addEventListener('pointermove',function(e){
+if(!drawing)return;e.preventDefault();
+var p=pt(e);if(kanaAt(p)){last=p;return}ctx.strokeStyle=ink();ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=wd(p.p,e);
+ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;
+});
+function up(){drawing=false;last=null}
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+
+$('#clr').onclick=clearCanvas;
+$('#show').onclick=function(){
+shown=!shown;ov.classList.toggle('on',shown);
+this.textContent=shown?'おてほんをかくす':'おてほんを見る';
+if(shown)$('#good').disabled=$('#near').disabled=false;
+};
+function judge(ok){
+if(!cur)return;
+if(ok){cur.ok++;ses.ok++;if(mode==='rev')cur.rev=false}else{cur.miss++;cur.rev=true}
+ses.n++;save();next();
+}
+$('#good').onclick=function(){judge(true)};
+$('#near').onclick=function(){judge(false)};
+$('#m-all').onclick=function(){start('all')};
+$('#m-rev').onclick=function(){start('rev')};
+
+function li(it,extra){
+var l=document.createElement('li');
+l.innerHTML='<span class="w k"></span><span class="m"></span>';
+l.children[0].textContent=it.w;
+l.children[1].textContent=(it.h||'')+'　できた '+it.ok+'・おしい '+it.miss;
+if(extra)l.appendChild(extra);return l;
+}
+function renderReg(){
+var ul=$('#reglist');ul.innerHTML='';
+if(!S.items.length){ul.innerHTML='<li class="meta">まだ漢字がありません。上の欄から追加しよう。</li>';return}
+S.items.forEach(function(it){
+var b=document.createElement('button');b.className='x';b.textContent='×';b.setAttribute('aria-label','削除');
+b.onclick=function(){if(!b.dataset.arm){b.dataset.arm='1';b.textContent='けす？';b.style.color='var(--red)';b.style.fontSize='16px';setTimeout(function(){delete b.dataset.arm;b.textContent='×';b.style.color='';b.style.fontSize=''},3000)}else{S.items=S.items.filter(function(x){return x.id!==it.id});dirty=true;save();renderReg()}};
+ul.appendChild(li(it,b));
+});
+}
+$('#add').onclick=function(){
+var w=$('#iw').value.trim(),h=$('#ih').value.trim();
+if(!w)return;
+S.items.push({id:S.nid++,w:w,h:h,ok:0,miss:0,rev:false});dirty=true;
+$('#iw').value='';$('#ih').value='';save();renderReg();
+};
+function renderStats(){
+var ok=0,miss=0;S.items.forEach(function(i){ok+=i.ok;miss+=i.miss});
+var rev=S.items.filter(function(i){return i.rev});
+$('#stats').innerHTML='<div><b>'+ok+'</b>できた</div><div><b>'+miss+'</b>おしい</div><div><b>'+rev.length+'</b>ふくしゅう</div>';
+var ul=$('#revlist');ul.innerHTML='';
+if(!rev.length){ul.innerHTML='<li class="meta">ふくしゅうする漢字はありません。</li>';return}
+rev.forEach(function(it){
+var b=document.createElement('button');b.className='btn ok';b.textContent='おぼえた';
+b.onclick=function(){it.rev=false;save();renderStats()};
+ul.appendChild(li(it,b));
+});
+}
+var sampleFn=null,maxImg=4;
+if(window.claude&&claude.use){claude.use('sample').then(function(f){
+if(!f)return;sampleFn=f;
+return Promise.resolve(f.limits&&f.limits()).then(function(l){
+if(l&&l.images){if(l.images.maxCount)maxImg=l.images.maxCount;$('#imgbox').style.display='block'}
+});
+}).catch(function(){});}
+function parseText(t){
+var out=[];
+t.replace(/^\uFEFF/,'').split(/\r?\n/).forEach(function(line){
+line=line.trim();if(!line)return;
+var p=line.split(/[,\t，、]/).map(function(x){return x.trim().replace(/^"+|"+$/g,'')});
+if(!p[0]||p[0]==='漢字')return;
+out.push({w:p[0].slice(0,6),h:p[1]||''});
+});
+return out;
+}
+function showPreview(list){
+var ex={};S.items.forEach(function(i){ex[i.w]=1});
+var box=$('#pvl');box.innerHTML='';
+if(!list.length){var e=document.createElement('div');e.className='meta';e.textContent='登録できる漢字がありません。';box.appendChild(e)}
+list.forEach(function(it){
+var r=document.createElement('div');r.className='pvrow';
+var c=document.createElement('input');c.type='checkbox';c.checked=!ex[it.w];
+var w=document.createElement('input');w.type='text';w.className='k';w.value=it.w;w.style.flex='1';
+var h=document.createElement('input');h.type='text';h.value=it.h||'';h.style.flex='1';
+r.appendChild(c);r.appendChild(w);r.appendChild(h);
+if(ex[it.w]){var m=document.createElement('span');m.className='meta';m.textContent='登録済み';r.appendChild(m)}
+box.appendChild(r);
+});
+$('#pv').style.display='block';
+$('#pv').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+$('#bpv').onclick=function(){$('#bmsg').textContent='';showPreview(parseText($('#bt').value))};
+$('#bf').onchange=function(){
+var f=this.files[0],inp=this;if(!f)return;
+f.arrayBuffer().then(function(buf){
+var t;
+try{t=new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(e){try{t=new TextDecoder('shift_jis').decode(buf)}catch(e2){t=''}}
+$('#bt').value=t.replace(/^\uFEFF/,'');
+$('#bmsg').textContent='';
+showPreview(parseText(t));inp.value='';
+});
+};
+$('#pvno').onclick=function(){$('#pv').style.display='none'};
+$('#pvok').onclick=function(){
+var seen={},n=0;S.items.forEach(function(i){seen[i.w]=1});
+document.querySelectorAll('#pvl .pvrow').forEach(function(r){
+var x=r.querySelectorAll('input');
+if(!x[0].checked)return;
+var w=x[1].value.trim().slice(0,6),h=x[2].value.trim();
+if(!w||seen[w])return;
+seen[w]=1;S.items.push({id:S.nid++,w:w,h:h,ok:0,miss:0,rev:false});n++;
+});
+if(n){dirty=true;save()}
+$('#pv').style.display='none';$('#bt').value='';
+$('#bmsg').textContent=n?(n+'件登録しました。'):'登録する漢字がありませんでした。';
+renderReg();
+};
+function errCopy(c){
+if(c==='not_granted'||c==='sampling_disabled'||c==='not_declared')return 'Claudeの利用が許可されていないため、写真の読み取りは使えません。';
+if(c==='image_rejected'||c==='images_unavailable')return 'この写真は読み取れませんでした。別の写真を選んでください。';
+if(c==='rate_limited')return '利用回数の上限です。しばらくしてからもう一度試してください。';
+if(c==='invalid_json'||c==='empty_completion'||c==='refused')return '漢字を読み取れませんでした。写真を撮り直してみてください。';
+return '読み取りに失敗しました。もう一度試してください。';
+}
+var PROMPT='小学4年生向けの漢字書き取りアプリに登録する語を、添付した写真（学校のプリントやテスト）から取り出してください。\n・書き取り問題の答えになる漢字（送りがなを含む語は「使える」のように送りがなも付ける）と、そのよみ（ひらがな）を拾う。\n・漢字の一覧表のときは、載っている漢字や熟語を拾う。\n・子どもの手書きの答えは参考にせず、正しい漢字を書く。\n・読み取れない語や自信のない語は含めない。同じ語は1回だけ。\n・出力はJSON配列のみ。例：[{"w":"季節","h":"きせつ"}]';
+$('#bi').onchange=async function(){
+var files=Array.prototype.slice.call(this.files).slice(0,maxImg);this.value='';
+if(!files.length||!sampleFn)return;
+var msg=$('#bmsg');msg.textContent='読み取り中…（数十秒かかることがあります）';
+try{
+var data=await sampleFn.json(PROMPT,{images:files,modelTier:'default',cache:false});
+var arr=Array.isArray(data)?data:[];
+var list=arr.map(function(x){return{w:String((x&&x.w)||'').trim().slice(0,6),h:String((x&&x.h)||'').trim()}}).filter(function(x){return x.w});
+msg.textContent=list.length+'件読み取りました。内容を確認してください。';
+showPreview(list);
+}catch(e){msg.textContent=errCopy(e&&e.code)}
+};
+window.addEventListener('resize',layout);
+start('all');
+})();
+</script>
+</body>
+</html>
